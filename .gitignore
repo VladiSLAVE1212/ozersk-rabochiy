@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.envrc
+
+# DB / runtime
+ozersk.db
+ozersk.db-journal
+ozersk.db-shm
+ozersk.db-wal
+*.sqlite
+*.sqlite3
+
+# Uploads (keep folder, ignore content)
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# Tooling
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store

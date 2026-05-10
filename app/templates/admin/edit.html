@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}{% if post %}Редактирование{% else %}Новая новость{% endif %} — {{ site_name }}{% endblock %}
+
+{% block content %}
+<h1>{% if post %}Редактирование новости{% else %}Новая новость{% endif %}</h1>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+<form method="post"
+      action="{% if post %}/admin/posts/{{ post.id }}/edit{% else %}/admin/posts/new{% endif %}"
+      class="post-form" id="post-form">
+
+    <label>
+        <span>Заголовок</span>
+        <input type="text" name="title" required value="{{ post.title if post else '' }}">
+    </label>
+
+    <label>
+        <span>Тематика</span>
+        <select name="category_id">
+            <option value="">—</option>
+            {% for c in categories %}
+                <option value="{{ c.id }}" {% if post and post.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>
+        <span>Главная картинка (URL)</span>
+        <div class="row">
+            <input type="text" name="cover_url" id="cover_url"
+                   value="{{ post.cover_url if post else '' }}"
+                   placeholder="https://… или /static/uploads/…">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('cover-file').click()">
+                Загрузить
+            </button>
+            <input type="file" id="cover-file" accept="image/*" hidden>
+        </div>
+        <small>Загрузите файл (до 5 МБ) или вставьте прямую ссылку на картинку.</small>
+    </label>
+
+    <label>
+        <span>Краткое описание <em>(необязательно — иначе соберём из текста)</em></span>
+        <textarea name="summary" rows="2">{{ post.summary if post else '' }}</textarea>
+    </label>
+
+    <label>
+        <span>Текст новости</span>
+        <div class="editor-toolbar">
+            <button type="button" data-wrap="b">Ж</button>
+            <button type="button" data-wrap="i"><em>К</em></button>
+            <button type="button" data-wrap="u"><u>П</u></button>
+            <button type="button" data-wrap="h2">H2</button>
+            <button type="button" data-wrap="quote">«…»</button>
+            <button type="button" data-wrap-prompt="url" data-prompt="URL ссылки">link</button>
+            <button type="button" data-img-prompt="1">img URL</button>
+            <button type="button" onclick="document.getElementById('inline-file').click()">img файл</button>
+            <input type="file" id="inline-file" accept="image/*" hidden>
+        </div>
+        <textarea name="body" id="post-body" rows="18" required>{{ post.body if post else '' }}</textarea>
+        <small>
+            Поддерживаются BB-коды: <code>[b]…[/b]</code>, <code>[i]…[/i]</code>,
+            <code>[u]…[/u]</code>, <code>[h2]…[/h2]</code>, <code>[quote]…[/quote]</code>,
+            <code>[url=…]…[/url]</code>, <code>[img]URL[/img]</code>.
+            Можно вставлять и обычный HTML — лишние теги будут вырезаны.
+        </small>
+    </label>
+
+    <label class="checkbox">
+        <input type="checkbox" name="published" value="1"
+               {% if not post or post.published %}checked{% endif %}>
+        <span>Опубликовать</span>
+    </label>
+
+    <div class="form-actions">
+        <button type="submit" class="btn-primary">
+            {% if post %}Сохранить{% else %}Опубликовать{% endif %}
+        </button>
+        <a href="/admin" class="btn-secondary">Отмена</a>
+    </div>
+</form>
+
+<script>
+(function () {
+    const body = document.getElementById('post-body');
+    const cover = document.getElementById('cover_url');
+
+    function wrap(tag) {
+        const start = body.selectionStart;
+        const end = body.selectionEnd;
+        const sel = body.value.slice(start, end);
+        const before = body.value.slice(0, start);
+        const after = body.value.slice(end);
+        const inserted = '[' + tag + ']' + (sel || '') + '[/' + tag + ']';
+        body.value = before + inserted + after;
+        body.focus();
+        const newPos = before.length + inserted.length;
+        body.setSelectionRange(newPos, newPos);
+    }
+
+    function insertAtCursor(text) {
+        const start = body.selectionStart;
+        const end = body.selectionEnd;
+        body.value = body.value.slice(0, start) + text + body.value.slice(end);
+        const pos = start + text.length;
+        body.focus();
+        body.setSelectionRange(pos, pos);
+    }
+
+    document.querySelectorAll('.editor-toolbar [data-wrap]').forEach(function (btn) {
+        btn.addEventListener('click', function () { wrap(btn.dataset.wrap); });
+    });
+
+    document.querySelectorAll('.editor-toolbar [data-wrap-prompt]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const url = prompt(btn.dataset.prompt || 'URL');
+            if (!url) return;
+            const start = body.selectionStart, end = body.selectionEnd;
+            const sel = body.value.slice(start, end) || url;
+            insertAtCursor('[' + btn.dataset.wrapPrompt + '=' + url + ']' + sel + '[/' + btn.dataset.wrapPrompt + ']');
+        });
+    });
+
+    document.querySelectorAll('.editor-toolbar [data-img-prompt]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const url = prompt('Прямая ссылка на картинку (https://…)');
+            if (!url) return;
+            insertAtCursor('[img]' + url + '[/img]');
+        });
+    });
+
+    async function uploadFile(file) {
+        const fd = new FormData();
+        fd.append('file', file);
+        const resp = await fetch('/admin/upload', { method: 'POST', body: fd });
+        if (!resp.ok) {
+            const err = await resp.json().catch(function(){return{error:'Ошибка загрузки'};});
+            alert(err.error || 'Ошибка загрузки');
+            return null;
+        }
+        const data = await resp.json();
+        return data.url;
+    }
+
+    document.getElementById('cover-file').addEventListener('change', async function (e) {
+        if (!e.target.files.length) return;
+        const url = await uploadFile(e.target.files[0]);
+        if (url) cover.value = url;
+        e.target.value = '';
+    });
+
+    document.getElementById('inline-file').addEventListener('change', async function (e) {
+        if (!e.target.files.length) return;
+        const url = await uploadFile(e.target.files[0]);
+        if (url) insertAtCursor('[img]' + url + '[/img]');
+        e.target.value = '';
+    });
+})();
+</script>
+{% endblock %}

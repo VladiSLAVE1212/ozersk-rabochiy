@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{% if current_category %}{{ current_category.name }} — {% endif %}{{ site_name }}{% endblock %}
+
+{% block content %}
+<form class="search" method="get" action="/">
+    <input type="search" name="q" value="{{ query }}" placeholder="Поиск по новостям…" autocomplete="off">
+    <button type="submit">Искать</button>
+</form>
+
+{% if query %}
+    <h1 class="page-title">Результаты поиска: «{{ query }}»</h1>
+{% elif current_category %}
+    <h1 class="page-title">{{ current_category.name }}</h1>
+{% else %}
+    <h1 class="page-title">Свежий номер</h1>
+{% endif %}
+
+{% if posts %}
+<div class="post-grid">
+    {% for p in posts %}
+    <article class="post-card">
+        {% if p.cover_url %}
+        <a href="/post/{{ p.slug }}" class="cover-link">
+            <img src="{{ p.cover_url }}" alt="" class="cover" loading="lazy">
+        </a>
+        {% endif %}
+        <div class="post-card-body">
+            {% if p.category_name %}
+            <a class="cat-tag" href="/category/{{ p.category_slug }}">{{ p.category_name }}</a>
+            {% endif %}
+            <h2 class="post-card-title">
+                <a href="/post/{{ p.slug }}">{{ p.title }}</a>
+            </h2>
+            {% if p.summary %}
+            <p class="post-card-summary">{{ p.summary }}</p>
+            {% endif %}
+            <p class="post-card-meta">
+                {% if p.author_name %}{{ p.author_name }} · {% endif %}{{ p.created_at[:16] }}
+            </p>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<p class="empty">Новостей пока нет. Загляните позже.</p>
+{% endif %}
+{% endblock %}

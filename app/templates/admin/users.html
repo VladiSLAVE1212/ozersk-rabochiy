@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Журналисты — {{ site_name }}{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <h1>Журналисты</h1>
+    <a class="btn-secondary" href="/admin">← Кабинет</a>
+</div>
+
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+<h2>Создать аккаунт</h2>
+<form method="post" action="/admin/users" class="post-form" style="max-width: 500px;">
+    <label>
+        <span>Логин</span>
+        <input type="text" name="username" required>
+    </label>
+    <label>
+        <span>Имя для подписей</span>
+        <input type="text" name="display_name">
+    </label>
+    <label>
+        <span>Пароль</span>
+        <input type="text" name="password" required>
+    </label>
+    <label class="checkbox">
+        <input type="checkbox" name="is_admin" value="1">
+        <span>Администратор (может управлять всеми новостями и аккаунтами)</span>
+    </label>
+    <button type="submit" class="btn-primary">Создать</button>
+</form>
+
+<h2>Существующие</h2>
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>Логин</th>
+            <th>Имя</th>
+            <th>Роль</th>
+            <th>Создан</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for u in users %}
+        <tr>
+            <td>{{ u.username }}</td>
+            <td>{{ u.display_name }}</td>
+            <td>{% if u.is_admin %}редактор{% else %}журналист{% endif %}</td>
+            <td class="muted">{{ u.created_at[:16] }}</td>
+            <td class="actions">
+                <form method="post" action="/admin/users/{{ u.id }}/password" class="inline-form"
+                      onsubmit="return confirm('Сменить пароль?');">
+                    <input type="text" name="password" placeholder="новый пароль" required style="width: 130px;">
+                    <button type="submit" class="link-btn">сменить</button>
+                </form>
+                {% if u.id != user.id %}
+                <form method="post" action="/admin/users/{{ u.id }}/delete" class="inline-form"
+                      onsubmit="return confirm('Удалить аккаунт?');">
+                    <button type="submit" class="link-btn danger">удалить</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

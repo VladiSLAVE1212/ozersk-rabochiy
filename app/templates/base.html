@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ site_name }}{% endblock %}</title>
+    <link rel="icon" type="image/png" href="/static/img/logo.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" href="/">
+            <img src="/static/img/logo.png" alt="{{ site_name }}" class="brand-logo">
+            <div class="brand-text">
+                <span class="brand-name">{{ site_name }}</span>
+                <span class="brand-tagline">{{ tagline }}</span>
+            </div>
+        </a>
+        <nav class="site-nav">
+            <a href="/">Главная</a>
+            {% if user %}
+                <a href="/admin">Кабинет</a>
+                <form method="post" action="/admin/logout" class="inline-form">
+                    <button type="submit" class="link-btn">Выйти</button>
+                </form>
+            {% else %}
+                <a href="/admin/login">Вход</a>
+            {% endif %}
+        </nav>
+    </div>
+    <div class="header-bar"></div>
+    <div class="container category-bar">
+        <a href="/" class="cat-link {% if not current_category %}active{% endif %}">★ Все</a>
+        {% for c in categories %}
+            <a href="/category/{{ c.slug }}"
+               class="cat-link {% if current_category and current_category.id == c.id %}active{% endif %}">
+                {{ c.name }}
+            </a>
+        {% endfor %}
+    </div>
+</header>
+
+<main class="container site-main">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+    <div class="container">
+        <p>© {{ site_name }} · Пародийная газета · Все совпадения случайны</p>
+    </div>
+</footer>
+</body>
+</html>

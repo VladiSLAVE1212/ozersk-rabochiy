@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} — {{ site_name }}{% endblock %}
+
+{% block content %}
+<article class="post">
+    {% if post.category_name %}
+    <a class="cat-tag" href="/category/{{ post.category_slug }}">{{ post.category_name }}</a>
+    {% endif %}
+    <h1 class="post-title">{{ post.title }}</h1>
+    <p class="post-meta">
+        {% if post.author_name %}{{ post.author_name }} · {% endif %}{{ post.created_at[:16] }}
+        {% if user and (user.is_admin or user.id == post.author_id) %}
+            · <a href="/admin/posts/{{ post.id }}/edit">редактировать</a>
+        {% endif %}
+    </p>
+    {% if post.cover_url %}
+    <img src="{{ post.cover_url }}" alt="" class="post-cover">
+    {% endif %}
+    <div class="post-body">
+        {{ body_html|safe }}
+    </div>
+</article>
+
+<p class="back-link"><a href="/">← К свежему номеру</a></p>
+{% endblock %}

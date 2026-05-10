@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Кабинет — {{ site_name }}{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <h1>Кабинет {% if user.is_admin %}редактора{% else %}журналиста{% endif %}: {{ user.display_name }}</h1>
+    <div class="admin-actions">
+        <a class="btn-primary" href="/admin/posts/new">+ Новая новость</a>
+        {% if user.is_admin %}
+            <a class="btn-secondary" href="/admin/users">Журналисты</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if posts %}
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>Заголовок</th>
+            <th>Тематика</th>
+            {% if user.is_admin %}<th>Автор</th>{% endif %}
+            <th>Создано</th>
+            <th>Статус</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for p in posts %}
+        <tr>
+            <td><a href="/post/{{ p.slug }}">{{ p.title }}</a></td>
+            <td>{{ p.category_name or "—" }}</td>
+            {% if user.is_admin %}<td>{{ p.author_name or "—" }}</td>{% endif %}
+            <td class="muted">{{ p.created_at[:16] }}</td>
+            <td>{% if p.published %}опубликовано{% else %}черновик{% endif %}</td>
+            <td class="actions">
+                <a href="/admin/posts/{{ p.id }}/edit">править</a>
+                <form method="post" action="/admin/posts/{{ p.id }}/delete" class="inline-form"
+                      onsubmit="return confirm('Удалить новость?');">
+                    <button type="submit" class="link-btn danger">удалить</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">Новостей пока нет. Создайте первую.</p>
+{% endif %}
+{% endblock %}
