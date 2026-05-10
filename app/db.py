@@ -7,7 +7,18 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-DB_PATH = Path(os.environ.get("OZERSK_DB", "ozersk.db")).resolve()
+
+def _resolve_db_path() -> Path:
+    explicit = os.environ.get("OZERSK_DB")
+    if explicit:
+        return Path(explicit).resolve()
+    fly_vol = Path("/data")
+    if fly_vol.is_dir() and os.access(fly_vol, os.W_OK):
+        return fly_vol / "ozersk.db"
+    return Path("ozersk.db").resolve()
+
+
+DB_PATH = _resolve_db_path()
 
 
 def _connect() -> sqlite3.Connection:

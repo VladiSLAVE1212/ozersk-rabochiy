@@ -18,7 +18,19 @@ from .content import make_summary, render_body, slugify
 from .db import get_conn, init_db
 
 BASE_DIR = Path(__file__).resolve().parent
-UPLOADS_DIR = BASE_DIR / "static" / "uploads"
+
+# Pick uploads dir: explicit env var > /data/uploads (fly volume) > local static path
+def _resolve_uploads_dir() -> Path:
+    explicit = os.environ.get("OZERSK_UPLOADS")
+    if explicit:
+        return Path(explicit).resolve()
+    fly_vol = Path("/data")
+    if fly_vol.is_dir() and os.access(fly_vol, os.W_OK):
+        return fly_vol / "uploads"
+    return BASE_DIR / "static" / "uploads"
+
+
+UPLOADS_DIR = _resolve_uploads_dir()
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
@@ -32,6 +44,7 @@ TAGLINE = "Орган трудящихся города Озёрска"
 
 app = FastAPI(title=SITE_NAME, docs_url=None, redoc_url=None, openapi_url=None)
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, max_age=60 * 60 * 24 * 14)
+app.mount("/static/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 
