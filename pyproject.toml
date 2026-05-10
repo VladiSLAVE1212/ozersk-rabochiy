@@ -11,6 +11,7 @@ dependencies = [
     "bcrypt>=4.2",
     "itsdangerous>=2.2",
     "bleach>=6.1",
+    "a2wsgi>=1.10",
 ]
 
 [project.optional-dependencies]
